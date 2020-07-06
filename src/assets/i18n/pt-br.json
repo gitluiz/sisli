@@ -1,0 +1,12 @@
+{
+  "PAGES": {
+      "HOME": {
+          "TITLE": "Aplicativo Trabalhando",
+          "GO_TO_DETAIL": "Detalhes"
+      },
+      "DETAIL": {
+        "TITLE": "Pagina de Detalhe",
+        "BACK_TO_HOME": "Voltar a Home"
+    }
+  }
+}
