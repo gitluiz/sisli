@@ -12,7 +12,7 @@ export class PedidoService {
 
   servico;
   apiuri = "https://api.awsli.com.br";
-  defaultFlag = '?chave_api=x&chave_aplicacao=x&situacao_id=4&limit=20';
+  defaultFlag = '?chave_api=e3404ea13250b36ea801&chave_aplicacao=8bc2963b-fe0f-4856-9a4d-9a988ef6a9f5&situacao_id=4&limit=20';
 
   httpOptions = {
     headers: new HttpHeaders({
