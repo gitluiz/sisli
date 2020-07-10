@@ -1,10 +1,9 @@
 import { DetalhePedido } from './DetalhePedido';
-
 export class ItemListaPedido {
-    "id": number;
+    "resource_uri": string;
     "checked": boolean;
     "numero": number;
-    "cliente_id": number;
+    "cliente": string;
     "valor_subtotal": number;
     "valor_envio": number;
     "valor_desconto": number;
@@ -13,7 +12,7 @@ export class ItemListaPedido {
     "data_modificacao": string;
     "data_expiracao": string;
     "detalhe": DetalhePedido;
-    constructor() {
-        this.checked = false;
+    constructor (){
+        this.detalhe = new DetalhePedido();
     }
 };

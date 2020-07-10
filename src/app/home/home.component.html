@@ -4,7 +4,7 @@
     <input class="form-control" type="datetime-local" id="pesquisa_date" name="pesquisa_date" [(ngModel)]="pesquisa.since_atualizado">
 </div>
 <div class="float-right">
-    <button class="btn btn-primary" (click)="pesquisar()">Pesquisar</button>
+    <button class="btn btn-primary" (click)="pesquisar(null)">Pesquisar</button>
     <button class="btn btn-success" (click)="downloadFile()">GERAR CSV</button>
 </div>
 <div class="clearfix"></div>
@@ -31,3 +31,14 @@
         </tr>
     </tbody>
 </table>
+<div [hidden]="!meta.show">
+    <div class="float-left">
+        Total: {{meta.total_count}}
+    </div>
+    <nav aria-label="Page navigation example" class="float-right">
+        <ul class="pagination">
+          <li class="page-item"><button type="button" class="page-link" (click)="pesquisar(meta.previous)">Anterior</button></li>
+          <li class="page-item"><button type="button" class="page-link" (click)="pesquisar(meta.next)">Proximo</button></li>
+        </ul>
+      </nav>
+</div>

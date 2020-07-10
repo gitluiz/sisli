@@ -6,6 +6,8 @@ import { ItemListaPedido } from '../shared/model/ItemListaPedido';
 import { saveAs } from 'file-saver';
 import { Subject } from 'rxjs';
 import { DataTableDirective } from 'angular-datatables';
+import { async } from 'rxjs/internal/scheduler/async';
+import { DetalhePedido } from '../shared/model/DetalhePedido';
 
 @Component({
   selector: 'app-home',
@@ -19,13 +21,48 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
 
   dtElement: DataTableDirective;
   dtOptions: DataTables.Settings = {};
+
   dtTrigger = new Subject();
 
-  public api: ListaPedido;
+  public createPagination: any = (totalPaginas: number, paginaAtual: number, np: number) => {
+    //np - NUMERO DE LIMITE DE PAGINAS A SER EXIBIDO.
+    np = np || 5;
+    /*
+     * OBJETO DE RETORNO
+     */
+    const listaDePagina = [];
+    paginaAtual = paginaAtual || 0;
+    totalPaginas = totalPaginas + 1;
+    /*
+     * CALCULO
+     */
+    //1º DEFINI A PRIMEIRA OPÇÃO DA LISTA
+    const first = paginaAtual % np === 0 ? paginaAtual : paginaAtual - (paginaAtual % np);
+    //2º VALIDAÇÃO DE SEGURANÇÃO
+    let last = totalPaginas <= np ? totalPaginas : np;
+    //3º DEFINE A ULTIMA OPÇÃO DA LISTA
+    last = (totalPaginas - first) > np ? last : totalPaginas - first;
+    let count = first;
+    for (let i = 0; i < last; i++) {
+      listaDePagina[i] = {};
+      listaDePagina[i].label = count + 1;
+      listaDePagina[i].numero = count;
+      count++;
+    }
+    return listaDePagina;
+  }
+
   public list: ItemListaPedido[] = [];
+
+  public meta: any = {
+    total_count: 0,
+    previous: null,
+    next: null,
+    show: false
+  };
+
   public pesquisa: any = {
-    since_atualizado: new Date(),
-    situacao_id: 1
+    since_atualizado: new Date()
   }
 
   public language: any = {
@@ -70,8 +107,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
   constructor(private router: Router, public pedidoService: PedidoService) { }
 
   ngOnInit(): void {
-    this.dtOptions.processing = true
     this.dtOptions.language = this.language;
+    this.dtOptions.paging = false;
   }
 
   ngAfterViewInit(): void {
@@ -84,7 +121,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
 
   private genRow(item: ItemListaPedido) {
     const row = [];
-    const itensPedido:any = item.detalhe.itens;
+    const itensPedido: any = item.detalhe.itens;
     row.push(item.numero);
     row.push(itensPedido.map(x => x.sku).join(", "));
     row.push("Destinatário:");
@@ -119,20 +156,36 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     saveAs(blob, "etiquetas.csv");
   }
 
-  pesquisar(): void {
+  pesquisar(url): void {
     this.dtElement.dtInstance.then((_dtInstance: DataTables.Api) => {
-      _dtInstance.destroy();
-      this.getPedidos();
+      this.getPedidos(_dtInstance, url);
     });
   }
 
-  getPedidos(): void {
+  getPedidos(_dtInstance: any, url: string): void {
     this.pesquisa.since_atualizado = this.pesquisa.since_atualizado instanceof Date ? this.pesquisa.since_atualizado.toISOString() : this.pesquisa.since_atualizado;
-    this.pedidoService.getListaPedido(this.pesquisa).subscribe(api => {
-      this.api = api;
-      this.list = api.response;
-      this.pedidoService.setDetalhes(this.list);
-      this.dtTrigger.next();
+    this.pedidoService.getListaPedido(this.pesquisa, url).subscribe(api => {
+      if (api.objects.length > 0) {
+        _dtInstance.destroy();
+        api.objects.forEach(i => {
+          i.detalhe = new DetalhePedido();
+        });
+        console.log(api);
+        this.meta = api.meta;
+        this.meta.show = true;
+        this.list = api.objects
+
+        this.pedidoService.setDetalhes(this.list).then((cb) => {
+          cb.subscribe((x) => {
+            x.forEach((d, i) => {
+              this.list[i].detalhe = d;
+            }, this.list);
+            this.dtTrigger.next();
+          });
+        });
+      } else {
+        this.meta.show = false;
+      }
     });
   }
 }

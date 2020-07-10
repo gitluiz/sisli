@@ -10,4 +10,7 @@ export class Cliente {
     sexo: string;
     telefone_celular: string;
     telefone_principal: string;
+    constructor (){
+        this.nome = "";
+    }
 };

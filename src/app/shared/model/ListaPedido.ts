@@ -4,6 +4,6 @@ import { Notifications } from './Notification';
 
 export class ListaPedido {
   "meta": MetaListaPedido;
-  "response": Array<ItemListaPedido>;
+  "objects": Array<ItemListaPedido>;
   "notification": Notifications;
 }
