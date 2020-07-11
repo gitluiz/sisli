@@ -1,12 +1,10 @@
 import { Component, OnInit, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { PedidoService } from '../shared/service/PedidoService'
-import { ListaPedido } from '../shared/model/ListaPedido';
 import { ItemListaPedido } from '../shared/model/ItemListaPedido';
 import { saveAs } from 'file-saver';
 import { Subject } from 'rxjs';
 import { DataTableDirective } from 'angular-datatables';
-import { async } from 'rxjs/internal/scheduler/async';
 import { DetalhePedido } from '../shared/model/DetalhePedido';
 
 @Component({
@@ -21,8 +19,156 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
 
   dtElement: DataTableDirective;
   dtOptions: DataTables.Settings = {};
-
   dtTrigger = new Subject();
+
+  consultado: boolean;
+  ckecked: boolean;
+
+  situacaolist: any[] = [
+    {
+      "aprovado": false,
+      "cancelado": false,
+      "codigo": "aguardando_pagamento",
+      "final": false,
+      "id": 2,
+      "nome": "Aguardando pagamento",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/2"
+    },
+    {
+      "aprovado": true,
+      "cancelado": false,
+      "codigo": "em_producao",
+      "final": false,
+      "id": 17,
+      "nome": "Em produção",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/17"
+    },
+    {
+      "aprovado": false,
+      "cancelado": true,
+      "codigo": "pagamento_devolvido",
+      "final": true,
+      "id": 7,
+      "nome": "Pagamento devolvido",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/7"
+    },
+    {
+      "aprovado": false,
+      "cancelado": false,
+      "codigo": "pagamento_em_analise",
+      "final": false,
+      "id": 3,
+      "nome": "Pagamento em análise",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/3"
+    },
+    {
+      "aprovado": true,
+      "cancelado": false,
+      "codigo": "pedido_chargeback",
+      "final": true,
+      "id": 16,
+      "nome": "Pagamento em chargeback",
+      "notificar_comprador": false,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/16"
+    },
+    {
+      "aprovado": true,
+      "cancelado": false,
+      "codigo": "pagamento_em_disputa",
+      "final": false,
+      "id": 6,
+      "nome": "Pagamento em disputa",
+      "notificar_comprador": false,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/6"
+    },
+    {
+      "aprovado": false,
+      "cancelado": true,
+      "codigo": "pedido_cancelado",
+      "final": true,
+      "id": 8,
+      "nome": "Pedido Cancelado",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/8"
+    },
+    {
+      "aprovado": false,
+      "cancelado": false,
+      "codigo": "pedido_efetuado",
+      "final": false,
+      "id": 9,
+      "nome": "Pedido Efetuado",
+      "notificar_comprador": false,
+      "padrao": true,
+      "resource_uri": "/api/v1/situacao/9"
+    },
+    {
+      "aprovado": true,
+      "cancelado": false,
+      "codigo": "pedido_em_separacao",
+      "final": false,
+      "id": 15,
+      "nome": "Pedido em separação",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/15"
+    },
+    {
+      "aprovado": true,
+      "cancelado": false,
+      "codigo": "pedido_entregue",
+      "final": true,
+      "id": 14,
+      "nome": "Pedido Entregue",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/14"
+    },
+    {
+      "aprovado": true,
+      "cancelado": false,
+      "codigo": "pedido_enviado",
+      "final": true,
+      "id": 11,
+      "nome": "Pedido Enviado",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/11"
+    },
+    {
+      "aprovado": true,
+      "cancelado": false,
+      "codigo": "pedido_pago",
+      "final": false,
+      "id": 4,
+      "nome": "Pedido Pago",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/4"
+    },
+    {
+      "aprovado": true,
+      "cancelado": false,
+      "codigo": "pronto_para_retirada",
+      "final": true,
+      "id": 13,
+      "nome": "Pedido pronto para retirada",
+      "notificar_comprador": true,
+      "padrao": false,
+      "resource_uri": "/api/v1/situacao/13"
+    }
+  ]
 
   public createPagination: any = (totalPaginas: number, paginaAtual: number, np: number) => {
     //np - NUMERO DE LIMITE DE PAGINAS A SER EXIBIDO.
@@ -61,8 +207,17 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     show: false
   };
 
+  hoje(): string {
+    const d = new Date();
+    return d.toISOString();
+  }
+
+  public datalimit = this.hoje().substr(0, 10);
+
   public pesquisa: any = {
-    since_atualizado: new Date()
+    since_atualizado: this.hoje().substr(0, 10) + 'T00:00:00',
+    until_criado: this.hoje().substr(0, 10),
+    situacao_id: 4
   }
 
   public language: any = {
@@ -107,8 +262,10 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
   constructor(private router: Router, public pedidoService: PedidoService) { }
 
   ngOnInit(): void {
+    this.consultado = false;
     this.dtOptions.language = this.language;
     this.dtOptions.paging = false;
+    this.ckecked = true;
   }
 
   ngAfterViewInit(): void {
@@ -117,6 +274,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
 
   ngOnDestroy(): void {
     this.dtTrigger.unsubscribe();
+  }
+
+  public setChecked(): void {
+    this.list.forEach((x) => {
+      x.checked = this.ckecked;
+    });
   }
 
   private genRow(item: ItemListaPedido) {
@@ -157,34 +320,51 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   pesquisar(url): void {
+    this.list = [];
+    this.consultado = true;
     this.dtElement.dtInstance.then((_dtInstance: DataTables.Api) => {
       this.getPedidos(_dtInstance, url);
     });
   }
 
   getPedidos(_dtInstance: any, url: string): void {
-    this.pesquisa.since_atualizado = this.pesquisa.since_atualizado instanceof Date ? this.pesquisa.since_atualizado.toISOString() : this.pesquisa.since_atualizado;
-    this.pedidoService.getListaPedido(this.pesquisa, url).subscribe(api => {
+    if (_dtInstance) {
+      _dtInstance.destroy();
+    }
+    const p = {
+      since_atualizado: this.pesquisa.since_atualizado instanceof Date ? this.pesquisa.since_atualizado.toISOString().substr(0, 16) : this.pesquisa.since_atualizado,
+      until_criado: (this.pesquisa.until_criado instanceof Date ? this.pesquisa.until_criado.toISOString().substr(0, 10) : this.pesquisa.until_criado) + "T00:00:00",
+      situacao_id: this.pesquisa.situacao_id
+    }
+    this.pedidoService.getListaPedido(p, url).subscribe(api => {
       if (api.objects.length > 0) {
-        _dtInstance.destroy();
+
         api.objects.forEach(i => {
           i.detalhe = new DetalhePedido();
         });
-        console.log(api);
-        this.meta = api.meta;
-        this.meta.show = true;
-        this.list = api.objects
 
-        this.pedidoService.setDetalhes(this.list).then((cb) => {
-          cb.subscribe((x) => {
-            x.forEach((d, i) => {
-              this.list[i].detalhe = d;
-            }, this.list);
-            this.dtTrigger.next();
+        this.list = this.list.concat(api.objects);
+
+        if (api.meta.next && this.list.length <= 45) {
+          this.getPedidos(null, api.meta.next)
+        } else {
+
+          this.meta = api.meta;
+          this.meta.show = true;
+          this.list.splice(79, (this.list.length - 45))
+          this.pedidoService.setDetalhes(this.list).then((cb) => {
+            cb.subscribe((x) => {
+              x.forEach((d, i) => {
+                this.list[i].detalhe = d;
+              }, this.list);
+              this.dtTrigger.next();
+              this.consultado = false;
+            });
           });
-        });
+        }
       } else {
         this.meta.show = false;
+        this.consultado = false;
       }
     });
   }

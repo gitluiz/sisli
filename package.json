@@ -99,6 +99,7 @@
         "@angular/localize": "10.0.2",
         "angular-datatables": "9.0.2",
         "file-saver": "2.0.2",
-        "g": "2.0.1"
+        "g": "2.0.1",
+        "moment": "2.27.0"
     }
 }
