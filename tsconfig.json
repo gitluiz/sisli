@@ -22,7 +22,8 @@
   "files": [
     "src/main.ts",
     "src/polyfills.ts",
-    "./src/app/home/HomeComponent.ts"
+    "./src/app/home/HomeComponent.ts",
+    "./src/app/detail/DetailComponent.ts"
   ],
   "include": [
     "src/**/*.d.ts"

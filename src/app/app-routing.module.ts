@@ -12,6 +12,11 @@ const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    path: '',
+    redirectTo: 'detail',
+    pathMatch: 'full'
+  },
+  {
     path: '**',
     component: PageNotFoundComponent
   }

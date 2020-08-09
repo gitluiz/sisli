@@ -6,6 +6,9 @@ import { saveAs } from 'file-saver';
 import { Subject } from 'rxjs';
 import { DataTableDirective } from 'angular-datatables';
 import { DetalhePedido } from '../shared/model/DetalhePedido';
+import { ListaPedido } from '../shared/model/ListaPedido';
+import { setTimeout } from 'timers';
+import { pbkdf2 } from 'crypto';
 
 @Component({
   selector: 'app-home',
@@ -23,6 +26,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
 
   consultado: boolean;
   ckecked: boolean;
+  produtos: any;
+  listRef: any;
 
   situacaolist: any[] = [
     {
@@ -174,14 +179,14 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     //np - NUMERO DE LIMITE DE PAGINAS A SER EXIBIDO.
     np = np || 5;
     /*
-     * OBJETO DE RETORNO
-     */
+             * OBJETO DE RETORNO
+             */
     const listaDePagina = [];
     paginaAtual = paginaAtual || 0;
     totalPaginas = totalPaginas + 1;
     /*
-     * CALCULO
-     */
+             * CALCULO
+             */
     //1º DEFINI A PRIMEIRA OPÇÃO DA LISTA
     const first = paginaAtual % np === 0 ? paginaAtual : paginaAtual - (paginaAtual % np);
     //2º VALIDAÇÃO DE SEGURANÇÃO
@@ -207,6 +212,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     show: false
   };
 
+  total: number;
+
   hoje(): string {
     const d = new Date();
     return d.toISOString();
@@ -217,7 +224,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
   public pesquisa: any = {
     since_atualizado: this.hoje().substr(0, 10) + 'T00:00:00',
     until_criado: this.hoje().substr(0, 10),
-    situacao_id: 4
+    situacao_id: 4,
+    since_numero: null,
+    limit: 1
   }
 
   public language: any = {
@@ -266,6 +275,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     this.dtOptions.language = this.language;
     this.dtOptions.paging = false;
     this.ckecked = true;
+    this.pedidoService.getProduto().subscribe(api => {
+      this.produtos = api.objects.filter((i) => {
+        i.checked = false;
+        return i.ativo;
+      });
+      console.log(this.produtos);
+    });
   }
 
   ngAfterViewInit(): void {
@@ -285,11 +301,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
   private genRow(item: ItemListaPedido) {
     const row = [];
     const itensPedido: any = item.detalhe.itens;
+    row.push("");
     row.push(item.numero);
-    row.push(itensPedido.map(x => x.sku).join(", "));
-    row.push("Destinatário:");
-    row.push(item.detalhe.cliente.nome);
     row.push(" ");
+    row.push(itensPedido.map(x => x.sku + "(" + parseInt(x.quantidade) + ")").join(", "));
+    row.push("Destinatário: ");
+    row.push(item.detalhe.cliente.nome);
     row.push(item.detalhe.endereco_entrega.endereco);
     row.push(", ");
     row.push(item.detalhe.endereco_entrega.numero);
@@ -299,16 +316,20 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     row.push(item.detalhe.endereco_entrega.cidade);
     row.push(", ");
     row.push(item.detalhe.endereco_entrega.estado);
-    row.push("CEP:");
-    row.push(item.detalhe.endereco_entrega.cep);
-    row.push("Referência:");
+    row.push("CEP: ");
+    row.push(item.detalhe.endereco_entrega.cep.replace(/^([\d]{2})\.*([\d]{3})-*([\d]{3})/gim, "$1$2-$3"));
+    row.push("Referência: ");
     row.push(item.detalhe.endereco_entrega.referencia);
     row.push(item.detalhe.envios[0].forma_envio.nome);
+    row.push(item.detalhe.cliente.email);
     return row.join(";");
   }
 
   public downloadFile(): void {
-    const header = ["NÚMERO DA VENDA", "CÓDIGO DOS PRODUTOS", "PRÉ-DESTINATÁRIO", "DESTINATÁRIO", "ESPAÇO", "RUA", "VÍRGULA", "NÚMERO", "COMPLEMENTO", "TRAÇO PRETO", "BAIRRO", "CIDADE", "VÍRGULA", "ESTADO", "PRÉ-CEP", "CEP", "PRÉ: REFERÊNCIA", "REFERÊNCIA", "MODO DE ENVIO"];
+    const header = ["PRÉ-PEDIDO", "PEDIDO", "ESPAÇO", "CÓDIGO", "PRÉ-DESTINATÁRIO", "DESTINATARIO",
+      "RUA", "VÍRGULA", "NÚMERO", "COMPLEMENTO", "TRAÇO", "BAIRRO",
+      "CIDADE", "VÍRGULA", "ESTADO", "PRÉ-CEP", "CEP", "PRÉ-REFERÊNCIA", "REFERÊNCIA",
+      "MODO DE ENVIO", "E-MAIL"];
     const data: Array<ItemListaPedido> = this.list.filter(i => i.checked);
     const csv = [];
     csv.push(header.join(';'));
@@ -316,7 +337,25 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     const csvArray: string = csv.join('\r\n');
 
     const blob: Blob = new Blob([csvArray], { type: 'text/csv' })
-    saveAs(blob, "etiquetas.csv");
+    saveAs(blob, "Pedidos_" + this.pesquisa.since_atualizado.substr(0, 10) + ".csv");
+  }
+
+  public filtroPorProduto(): void {
+    const produtos: any = this.produtos.filter(p => p.checked);
+    if (produtos.length === 0) {
+      this.list = [...this.listRef];
+    } else {
+      this.list = this.listRef.filter(function (pedido) {
+        const a = pedido.detalhe.itens.map(x => x.sku);
+        const b = produtos.map(x => x.sku);
+        return a.equals(b);
+      });
+    }
+    this.dtElement.dtInstance.then((_dtInstance: DataTables.Api) => {
+      _dtInstance.destroy();
+      this.dtTrigger.next();
+    });
+    console.log(this.list);
   }
 
   pesquisar(url): void {
@@ -331,12 +370,32 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     if (_dtInstance) {
       _dtInstance.destroy();
     }
-    const p = {
-      since_atualizado: this.pesquisa.since_atualizado instanceof Date ? this.pesquisa.since_atualizado.toISOString().substr(0, 16) : this.pesquisa.since_atualizado,
-      until_criado: (this.pesquisa.until_criado instanceof Date ? this.pesquisa.until_criado.toISOString().substr(0, 10) : this.pesquisa.until_criado) + "T00:00:00",
-      situacao_id: this.pesquisa.situacao_id
+    const p: any = {
+      since_atualizado: this.pesquisa.since_atualizado instanceof Date ? this.pesquisa.since_atualizado.toISOString().substr(0, 19) : this.pesquisa.since_atualizado.length <= 16 ? this.pesquisa.since_atualizado + ":00" : this.pesquisa.since_atualizado,
+      until_criado: (this.pesquisa.until_criado instanceof Date ? this.pesquisa.until_criado.toISOString().substr(0, 19) : this.pesquisa.until_criado) + "T00:00:00",
+      limit: this.pesquisa.since_numero === null ? 20 : 1
+    }
+    if (this.pesquisa.since_numero) {
+      p.since_numero = this.pesquisa.since_numero;
+    } else {
+      p.situacao_id = this.pesquisa.situacao_id;
     }
     this.pedidoService.getListaPedido(p, url).subscribe(api => {
+
+      if (!Array.isArray(api.objects)) {
+        const item = {
+          objects: [api],
+          meta: {
+            limit: 1,
+            next: null,
+            offset: 0,
+            previous: null,
+            total_count: 0
+          }
+        }
+        api = item as unknown as ListaPedido;
+      }
+
       if (api.objects.length > 0) {
 
         api.objects.forEach(i => {
@@ -344,14 +403,14 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
         });
 
         this.list = this.list.concat(api.objects);
+        this.listRef = [...this.list];
+        this.total = (this.total || 0) + api.meta.total_count;
 
-        if (api.meta.next && this.list.length <= 45) {
-          this.getPedidos(null, api.meta.next)
+        if (api.meta.next && this.list.length < 40) {
+          this.getPedidos(null, api.meta.next);
         } else {
-
           this.meta = api.meta;
           this.meta.show = true;
-          this.list.splice(79, (this.list.length - 45))
           this.pedidoService.setDetalhes(this.list).then((cb) => {
             cb.subscribe((x) => {
               x.forEach((d, i) => {
@@ -363,6 +422,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
           });
         }
       } else {
+        this.dtTrigger.next();
         this.meta.show = false;
         this.consultado = false;
       }

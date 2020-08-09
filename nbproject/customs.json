@@ -1,6 +1,7 @@
 {
     "elements": {},
     "attributes": {
+        "[(ngmodel)]": {},
         "*ngfor": {}
     }
 }

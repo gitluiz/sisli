@@ -1,76 +1,110 @@
-<hr>
-<div class="d-flex flex-row">
-    <div class="mr-auto">
-        <div class="d-flex flex-row">
-            <div>
-                <label for="birthdaytime">Seleção:&nbsp;&nbsp;&nbsp;&nbsp;</label>
-                <input class="form-control" type="checkbox" id="ckecked" name="ckecked" [(ngModel)]="ckecked"
-                    [ngModelOptions]="{standalone: true}" (change)="setChecked()">
-            </div>
-            <div>
-                <label for="birthdaytime">Data e Inicial:</label>
-                <input class="form-control" type="datetime-local" id="pesquisa_date" name="pesquisa_date"
-                    [(ngModel)]="pesquisa.since_atualizado">
-            </div>
-            <div>
-                <label for="birthdaytime">Data e Final:</label>
-                <input class="form-control" type="date" id="pesquisa_date" name="pesquisa_date" max="datalimit"
-                    [(ngModel)]="pesquisa.until_criado">
-            </div>
-            <div>
-                <label for="birthdaytime">Situação:</label>
-                <select class="form-control" type="date" id="pesquisa_date" name="pesquisa_date"
-                    [(ngModel)]="pesquisa.situacao_id">
-                    <option *ngFor="let s of situacaolist" [value]="s.id">{{s.nome}}</option>
-                </select>
+<style>
+    #myProgress {
+        width: 100%;
+        background-color: grey;
+    }
+
+    #myBar {
+        width: 1%;
+        height: 30px;
+        background-color: green;
+    }
+</style>
+<h2>Pedidos</h2>
+<div class="table-responsive">
+    <hr>
+
+    <div class="d-flex flex-row">
+        <div class="mr-auto">
+            <div class="d-flex flex-row">
+                <div>
+                    <label for="birthdaytime">Seleção:&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-control" type="checkbox" id="ckecked" name="ckecked" [(ngModel)]="ckecked"
+                        [ngModelOptions]="{standalone: true}" (change)="setChecked()">
+                </div>
+                <div>
+                    <label for="birthdaytime">Data e Inicial:</label>
+                    <input class="form-control" type="datetime-local" id="pesquisa_date" name="pesquisa_date"
+                        [(ngModel)]="pesquisa.since_atualizado">
+                </div>
+                <div>
+                    <label for="birthdaytime">Data e Final:</label>
+                    <input class="form-control" type="date" id="pesquisa_date" name="pesquisa_date" max="datalimit"
+                        [(ngModel)]="pesquisa.until_criado">
+                </div>
+                <div>
+                    <label for="pesquisa_date">Situação:</label>
+                    <select class="form-control" type="date" id="pesquisa_date" name="pesquisa_date"
+                        style="height: 40px;" [(ngModel)]="pesquisa.situacao_id">
+                        <option *ngFor="let s of situacaolist" [value]="s.id">{{s.nome}}</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="since_numero">Código:</label>
+                    <input class="form-control" type="text" id="since_numero" name="since_numero" style="height: 40px;"
+                        [(ngModel)]="pesquisa.since_numero">
+                </div>
             </div>
         </div>
+        <div class="float-right">
+            <button class="btn btn-primary" (click)="pesquisar(null)">Pesquisar</button>
+            <button class="btn btn-success" (click)="downloadFile()">GERAR CSV</button>
+        </div>
     </div>
-    <div class="float-right">
-        <button class="btn btn-primary" (click)="pesquisar(null)">Pesquisar</button>
-        <button class="btn btn-success" (click)="downloadFile()">GERAR CSV</button>
+    <div [hidden]="meta.total_count <= 0">
+        <div style="padding: 10px 0; border-bottom: 1px solid #CCC; margin-bottom: 5px;">Produtos</div>
+        <div *ngFor="let prod of produtos">
+            <input type="checkbox" [checked]="prod.checked" (change)="prod.checked = !prod.checked; filtroPorProduto()" />
+            {{prod.nome}}
+        </div>
     </div>
-</div>
-<div class="clearfix"></div>
-<hr>
-<div [hidden]="!consultado">
-    consultado...
-</div>
-<div [hidden]="consultado">
-    <table datatable [dtOptions]="dtOptions" [dtTrigger]="dtTrigger" class="table table-striped table-sm">
-        <thead>
-            <tr>
-                <th>&nbsp;</th>
-                <th>Numero</th>
-                <th>Cliente</th>
-                <th>Data Ultima Atualização</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let item of list">
-                <td>
-                    <input type="checkbox" [checked]="item.checked" (change)="item.checked = !item.checked" />
-                </td>
-                <td>{{item.numero}}</td>
-                <td>
-                    {{item.detalhe.cliente.nome}}<br>
-                    {{item.detalhe.cliente.email}}
-                </td>
-                <td>{{item.data_modificacao| date:"dd/MM/yyyy h:mm:ss"}}</td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-<div [hidden]="!meta.show">
-    <div class="float-left">
-        Total: {{meta.total_count}}
+    <div class="clearfix"></div>
+    <hr>
+    <div [hidden]="!consultado">
+        Consultando...
     </div>
-    <nav aria-label="Page navigation example" class="float-right">
-        <ul class="pagination">
-            <li class="page-item"><button type="button" class="page-link"
-                    (click)="pesquisar(meta.previous)">Anterior</button></li>
-            <li class="page-item"><button type="button" class="page-link"
-                    (click)="pesquisar(meta.next)">Proximo</button></li>
-        </ul>
-    </nav>
+    <div [hidden]="consultado">
+        <table datatable [dtOptions]="dtOptions" [dtTrigger]="dtTrigger" class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>&nbsp;</th>
+                    <th>Numero</th>
+                    <th>Cliente</th>
+                    <th>Data Ultima Atualização</th>
+                    <th>Itens</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of list">
+                    <td>
+                        <input type="checkbox" [checked]="item.checked" (change)="item.checked = !item.checked" />
+                    </td>
+                    <td>{{item.numero}}</td>
+                    <td>
+                        {{item.detalhe.cliente.nome}}<br>
+                        {{item.detalhe.cliente.email}}
+                    </td>
+                    <td>{{item.data_modificacao| date:"dd/MM/yyyy h:mm:ss"}}</td>
+                    <td>
+                        <div *ngFor="let p of item.detalhe.itens">
+                            {{p.sku}} ({{p.quantidade | number:'1.0-0'}})
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div [hidden]="!meta.show">
+        <div class="float-left">
+            Total: {{meta.total_count}}
+        </div>
+        <nav aria-label="Page navigation example" class="float-right" [hidden]="meta.total_count <= 40">
+            <ul class="pagination">
+                <li class="page-item"><button type="button" class="page-link"
+                        (click)="pesquisar(meta.previous)">Anterior</button></li>
+                <li class="page-item"><button type="button" class="page-link"
+                        (click)="pesquisar(meta.next)">Proximo</button></li>
+            </ul>
+        </nav>
+    </div>
 </div>
