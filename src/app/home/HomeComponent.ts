@@ -7,8 +7,6 @@ import { Subject } from 'rxjs';
 import { DataTableDirective } from 'angular-datatables';
 import { DetalhePedido } from '../shared/model/DetalhePedido';
 import { ListaPedido } from '../shared/model/ListaPedido';
-import { setTimeout } from 'timers';
-import { pbkdf2 } from 'crypto';
 
 @Component({
   selector: 'app-home',
@@ -316,7 +314,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     row.push(item.detalhe.endereco_entrega.cidade);
     row.push(", ");
     row.push(item.detalhe.endereco_entrega.estado);
-    row.push("CEP: ");
+    row.push("CEP:");
     row.push(item.detalhe.endereco_entrega.cep.replace(/^([\d]{2})\.*([\d]{3})-*([\d]{3})/gim, "$1$2-$3"));
     row.push("Referência: ");
     row.push(item.detalhe.endereco_entrega.referencia);

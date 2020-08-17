@@ -13,8 +13,8 @@ export class PedidoService {
 
   servico;
   apiuri = "https://api.awsli.com.br";
-  defaultFlag = "?chave_api=xxx&chave_aplicacao=xxx";
-  apiProduto = this.apiuri + "/v1/produto?chave_api=xxxx&chave_aplicacao=xxx";
+  defaultFlag = "?chave_api=e3404ea13250b36ea801&chave_aplicacao=8bc2963b-fe0f-4856-9a4d-9a988ef6a9f5";
+  apiProduto = this.apiuri + "/v1/produto?chave_api=e3404ea13250b36ea801&chave_aplicacao=8bc2963b-fe0f-4856-9a4d-9a988ef6a9f5";
   httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
