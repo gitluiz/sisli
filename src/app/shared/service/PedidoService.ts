@@ -13,8 +13,7 @@ export class PedidoService {
 
   servico;
   apiuri = "https://api.awsli.com.br";
-  defaultFlag = "?chave_api=e3404ea13250b36ea801&chave_aplicacao=8bc2963b-fe0f-4856-9a4d-9a988ef6a9f5";
-  apiProduto = this.apiuri + "/v1/produto?chave_api=e3404ea13250b36ea801&chave_aplicacao=8bc2963b-fe0f-4856-9a4d-9a988ef6a9f5";
+
   httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
@@ -62,8 +61,20 @@ export class PedidoService {
   }
 
   public getListaPedido(pesquisa: any, url: string): Observable<ListaPedido> {
-    const myUrl = this.apiuri + (url || ((pesquisa.since_numero ? "/v1/pedido/" + pesquisa.since_numero : "/v1/pedido/search/") + this.defaultFlag + this.defaultFlagCreate(pesquisa)));
+    const myUrl = this.apiuri + (url || ((pesquisa.since_numero ? "/v1/pedido_envio/" + pesquisa.since_numero : "/v1/pedido/search/") + this.defaultFlag + this.defaultFlagCreate(pesquisa)));
     return this.httpClient.get<ListaPedido>(myUrl);
   }
 
+  public getPedidoPorRastreamento(params: string): Promise<any> {
+    const myUrl = this.apiuri + "/v1/pedido_envio/";
+    const list = params.split(/(,|, )/gim);
+    if (list) {
+      return Promise.resolve(forkJoin(list.map((i) => {
+        const url = myUrl.concat(i).concat(this.defaultFlag);
+        return this.httpClient.get<any>(url);
+      })));
+    } else {
+      return Promise.resolve(null);
+    }
+  }
 }

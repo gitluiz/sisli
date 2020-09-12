@@ -211,6 +211,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
   };
 
   total: number;
+  codigos_de_rastreio: string;
 
   hoje(): string {
     const d = new Date();
@@ -222,10 +223,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
   public pesquisa: any = {
     since_atualizado: this.hoje().substr(0, 10) + 'T00:00:00',
     until_criado: this.hoje().substr(0, 10),
-    situacao_id: 4,
+    situacao_id: 11,
     since_numero: null,
     limit: 1
   }
+
+  //^\([1-9]{2}\) (?:[2-8]|9[1-9])[0-9]{3}\-[0-9]{4}$
 
   public language: any = {
     "sEmptyTable": "Nenhum registro encontrado",
@@ -320,14 +323,30 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     row.push(item.detalhe.endereco_entrega.referencia);
     row.push(item.detalhe.envios[0].forma_envio.nome);
     row.push(item.detalhe.cliente.email);
+
+    const t1 = item.detalhe.cliente.telefone_principal;
+    const t2 = item.detalhe.cliente.telefone_celular;
+    row.push((t1 === null ? "" : t1.replace(/(\d{2})(\d{4,5})(\d{4})/gm, "($1) $2-$3")) + " - " + (t2 === null ? "" : t2.replace(/(\d{2})(\d{4,5})(\d{4})/gm, "($1) $2-$3")));
+
+    const v1 = item.detalhe.cliente.cnpj;
+    const v2 = item.detalhe.cliente.cpf;
+    row.push((v1 === null ? "" : v1.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/gm, "$1.$2.$3/$4-$5")) + "  " + (v2 === null ? "" : v2.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/gm, "$1.$2.$3-$4")));
+
+    row.push(item.detalhe.envios.map(x => x.objeto).join(", "));
+
     return row.join(";");
   }
+  /*
+   {{item.detalhe.cliente.telefone_celular | creditCardMask : 'tel'}}<br>
+            {{item.detalhe.cliente.telefone_principal | creditCardMask : 'tel'}}
+          </td>
+  */
 
   public downloadFile(): void {
     const header = ["PRÉ-PEDIDO", "PEDIDO", "ESPAÇO", "CÓDIGO", "PRÉ-DESTINATÁRIO", "DESTINATARIO",
       "RUA", "VÍRGULA", "NÚMERO", "COMPLEMENTO", "TRAÇO", "BAIRRO",
       "CIDADE", "VÍRGULA", "ESTADO", "PRÉ-CEP", "CEP", "PRÉ-REFERÊNCIA", "REFERÊNCIA",
-      "MODO DE ENVIO", "E-MAIL"];
+      "MODO DE ENVIO", "E-MAIL", "CONTATO", "DOC", "RASTREIO"];
     const data: Array<ItemListaPedido> = this.list.filter(i => i.checked);
     const csv = [];
     csv.push(header.join(';'));
@@ -356,11 +375,54 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     console.log(this.list);
   }
 
+  public filtroPorRastreio(codigos_de_rastreio: any): void {
+
+    if (codigos_de_rastreio === null || codigos_de_rastreio === "") {
+      this.list = [...this.listRef];
+    } else {
+      //RE813270754BR, RE813270706BR, RE813270051BR, RE813270065BR
+      const codigos = codigos_de_rastreio.replace(/\s/g, '').split(",");
+      this.list = this.listRef.filter(function (pedido) {
+        const a = pedido.detalhe.envios.map(x => x.objeto);
+        return codigos.some(function (item) {
+          return this.indexOf(item) !== -1;
+        }, a);
+      });
+    }
+    this.dtElement.dtInstance.then((_dtInstance: DataTables.Api) => {
+      _dtInstance.destroy();
+      this.dtTrigger.next();
+    });
+    console.log(this.list);
+  }
+
   pesquisar(url): void {
     this.list = [];
     this.consultado = true;
     this.dtElement.dtInstance.then((_dtInstance: DataTables.Api) => {
       this.getPedidos(_dtInstance, url);
+    });
+  }
+
+  getPedidosRastreamento(params): void {
+    this.list = [];
+    this.consultado = true;
+    this.dtElement.dtInstance.then((_dtInstance: DataTables.Api) => {
+      if (_dtInstance) {
+        _dtInstance.destroy();
+      }
+      this.pedidoService.getPedidoPorRastreamento(params);
+      console.log("xx");
+      return null;
+      this.pedidoService.setDetalhes(this.list).then((cb) => {
+        cb.subscribe((x) => {
+          x.forEach((d, i) => {
+            this.list[i].detalhe = d;
+          }, this.list);
+          this.dtTrigger.next();
+          this.consultado = false;
+        });
+      });
     });
   }
 
