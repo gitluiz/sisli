@@ -380,8 +380,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy, OnInit {
     if (codigos_de_rastreio === null || codigos_de_rastreio === "") {
       this.list = [...this.listRef];
     } else {
-      //RE813270754BR, RE813270706BR, RE813270051BR, RE813270065BR
-      const codigos = codigos_de_rastreio.replace(/\s/g, '').split(",");
+      //RE813270754BR, RE813270706BR, RE813270051BR, 
+      const n = codigos_de_rastreio.replace(/\s/g, ",");
+      const codigos = n.split(",");
       this.list = this.listRef.filter(function (pedido) {
         const a = pedido.detalhe.envios.map(x => x.objeto);
         return codigos.some(function (item) {
